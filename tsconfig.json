@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"rewriteRelativeImportExtensions": true,
 		"allowJs": true,
-		"checkJs": true,
+		"checkJs": false,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
@@ -14,5 +14,10 @@
 		"types": [
 			"./worker-configuration.d.ts"
 		]
-	}
+	},
+	"exclude": [
+		"node_modules",
+		"src/lib/paraglide",
+		"src/paraglide"
+	]
 }

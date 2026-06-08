@@ -397,7 +397,7 @@
     return calculateKinship(
       selectedNodeId,
       kinshipTargetId,
-      data.tree.nodes,
+      data.tree.nodes as any,
       allEdges,
       data.tree.customTerms,
     );

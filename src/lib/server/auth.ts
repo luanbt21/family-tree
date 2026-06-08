@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth/minimal";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { env } from "$env/dynamic/private";
 import { getRequestEvent } from "$app/server";
@@ -49,11 +49,13 @@ const authConfig = {
   ],
 } satisfies Omit<Parameters<typeof betterAuth>[0], "database">;
 
-export const createAuth = (d1: D1Database) =>
+export const createAuth = (d1: D1Database, origin?: string) =>
   betterAuth({
     ...authConfig,
-    database: drizzleAdapter(getDb(d1), { provider: "sqlite" }),
+    baseURL: origin || authConfig.baseURL,
+    database: prismaAdapter(getDb(d1), { provider: "sqlite" }),
   });
+
 
 /**
  * DO NOT USE!
