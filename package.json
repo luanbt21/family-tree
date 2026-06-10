@@ -24,7 +24,7 @@
     "format": "oxfmt --write ."
   },
   "dependencies": {
-    "zod": "^4.4.3"
+    "valibot": "^1.4.1"
   },
   "devDependencies": {
     "@better-auth/cli": "~1.4.21",
@@ -64,7 +64,8 @@
     "typescript": "^6.0.3",
     "vaul-svelte": "1.0.0-next.7",
     "vite": "^8.0.16",
-    "wrangler": "^4.99.0"
+    "wrangler": "^4.99.0",
+    "zod": "^4.4.3"
   },
   "packageManager": "pnpm@11.5.2"
 }

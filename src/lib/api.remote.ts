@@ -1,5 +1,5 @@
 import { query, command, getRequestEvent } from "$app/server";
-import { z } from "zod";
+import * as v from "valibot";
 import type { PrismaClient } from "$lib/generated/prisma";
 
 // Helper to get request context synchronously
@@ -43,7 +43,7 @@ export const getTrees = query(async () => {
   }));
 });
 
-export const createTree = command(z.any(), async (payload: any) => {
+export const createTree = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { name, description } = payload;
@@ -65,7 +65,7 @@ export const createTree = command(z.any(), async (payload: any) => {
   return { ...newTree, role: "OWNER" };
 });
 
-export const getTree = query(z.string(), async (id: string) => {
+export const getTree = query(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const access = await checkTreeAccess(db, user.id, id);
@@ -91,7 +91,7 @@ export const getTree = query(z.string(), async (id: string) => {
   return { tree: treeData, role: access.role };
 });
 
-export const deleteTree = command(z.string(), async (id: string) => {
+export const deleteTree = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const access = await checkTreeAccess(db, user.id, id, ["OWNER"]);
@@ -101,7 +101,7 @@ export const deleteTree = command(z.string(), async (id: string) => {
   return { success: true, message: "Family tree deleted successfully." };
 });
 
-export const getTreeMembers = query(z.string(), async (id: string) => {
+export const getTreeMembers = query(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const access = await checkTreeAccess(db, user.id, id);
@@ -124,7 +124,7 @@ export const getTreeMembers = query(z.string(), async (id: string) => {
   return members;
 });
 
-export const addTreeMember = command(z.any(), async (payload: any) => {
+export const addTreeMember = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { id, emailOrUsername, role } = payload;
@@ -170,7 +170,7 @@ export const addTreeMember = command(z.any(), async (payload: any) => {
   return newMember;
 });
 
-export const updateTreeMember = command(z.any(), async (payload: any) => {
+export const updateTreeMember = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { id, memberId, role } = payload;
@@ -190,7 +190,7 @@ export const updateTreeMember = command(z.any(), async (payload: any) => {
   return updated;
 });
 
-export const deleteTreeMember = command(z.any(), async (payload: any) => {
+export const deleteTreeMember = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { id, memberId } = payload;
@@ -211,7 +211,7 @@ export const deleteTreeMember = command(z.any(), async (payload: any) => {
 // NODES & EDGES REMOTE FUNCTIONS
 // =========================================================================
 
-export const createNode = command(z.any(), async (payload: any) => {
+export const createNode = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const {
@@ -272,7 +272,7 @@ export const createNode = command(z.any(), async (payload: any) => {
   return fullNode;
 });
 
-export const updateNode = command(z.any(), async (payload: any) => {
+export const updateNode = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { id, payload: dataPayload } = payload;
@@ -344,7 +344,7 @@ export const updateNode = command(z.any(), async (payload: any) => {
   return fullNode;
 });
 
-export const deleteNode = command(z.string(), async (id: string) => {
+export const deleteNode = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
@@ -358,7 +358,7 @@ export const deleteNode = command(z.string(), async (id: string) => {
   return { success: true, message: "Member deleted successfully." };
 });
 
-export const createEdge = command(z.any(), async (payload: any) => {
+export const createEdge = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { sourceId, targetId, type, order } = payload;
@@ -392,7 +392,7 @@ export const createEdge = command(z.any(), async (payload: any) => {
   });
 });
 
-export const deleteEdge = command(z.string(), async (id: string) => {
+export const deleteEdge = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
@@ -409,7 +409,7 @@ export const deleteEdge = command(z.string(), async (id: string) => {
   return { success: true, message: "Relationship removed successfully." };
 });
 
-export const createCustomField = command(z.any(), async (payload: any) => {
+export const createCustomField = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { treeId, name, type } = payload;
@@ -426,7 +426,7 @@ export const createCustomField = command(z.any(), async (payload: any) => {
   });
 });
 
-export const deleteCustomField = command(z.string(), async (id: string) => {
+export const deleteCustomField = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
@@ -440,7 +440,7 @@ export const deleteCustomField = command(z.string(), async (id: string) => {
   return { success: true, message: "Custom field deleted successfully." };
 });
 
-export const getKinshipTerms = query(z.string(), async (id: string) => {
+export const getKinshipTerms = query(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const access = await checkTreeAccess(db, user.id, id, ["OWNER", "EDITOR", "VIEWER"]);
@@ -452,7 +452,7 @@ export const getKinshipTerms = query(z.string(), async (id: string) => {
   return terms;
 });
 
-export const saveKinshipTerm = command(z.any(), async (payload: any) => {
+export const saveKinshipTerm = command(v.any(), async (payload: any) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
   const { treeId, pathKey, term } = payload;
@@ -476,7 +476,7 @@ export const saveKinshipTerm = command(z.any(), async (payload: any) => {
   }
 });
 
-export const deleteKinshipTerm = command(z.string(), async (id: string) => {
+export const deleteKinshipTerm = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
