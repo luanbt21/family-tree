@@ -1,14 +1,12 @@
 import { betterAuth } from "better-auth/minimal";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { sveltekitCookies } from "better-auth/svelte-kit";
-import { env } from "$env/dynamic/private";
+import { env as privateEnv } from "$env/dynamic/private";
 import { getRequestEvent } from "$app/server";
 import { getDb } from "$lib/server/db";
 import { admin, anonymous, emailOTP, phoneNumber, username } from "better-auth/plugins";
 
 const authConfig = {
-  baseURL: env.ORIGIN,
-  secret: env.BETTER_AUTH_SECRET,
   user: {
     additionalFields: {
       role: {
@@ -21,16 +19,6 @@ const authConfig = {
     },
   },
   emailAndPassword: { enabled: true },
-  socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
-    github: {
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-    },
-  },
   plugins: [
     admin(),
     anonymous(),
@@ -47,14 +35,40 @@ const authConfig = {
     }),
     sveltekitCookies(getRequestEvent), // make sure this is the last plugin in the array
   ],
-} satisfies Omit<Parameters<typeof betterAuth>[0], "database">;
+} satisfies Omit<
+  Parameters<typeof betterAuth>[0],
+  "database" | "secret" | "baseURL" | "socialProviders"
+>;
 
-export const createAuth = (d1: D1Database, origin?: string) =>
-  betterAuth({
+export function getEnv(
+  env: Env | Record<string, string | undefined> | undefined,
+  key: keyof Env,
+): string {
+  return ((env && env[key]) || privateEnv[key as keyof typeof privateEnv]) as string;
+}
+
+export const createAuth = (
+  env: Env | Record<string, string | undefined> | undefined,
+  d1: D1Database,
+  origin?: string,
+) => {
+  return betterAuth({
     ...authConfig,
-    baseURL: origin || authConfig.baseURL,
+    baseURL: origin || getEnv(env, "ORIGIN"),
+    secret: getEnv(env, "BETTER_AUTH_SECRET"),
+    socialProviders: {
+      google: {
+        clientId: getEnv(env, "GOOGLE_CLIENT_ID"),
+        clientSecret: getEnv(env, "GOOGLE_CLIENT_SECRET"),
+      },
+      github: {
+        clientId: getEnv(env, "GITHUB_CLIENT_ID"),
+        clientSecret: getEnv(env, "GITHUB_CLIENT_SECRET"),
+      },
+    },
     database: prismaAdapter(getDb(d1), { provider: "sqlite" }),
   });
+};
 
 /**
  * DO NOT USE!
@@ -62,4 +76,4 @@ export const createAuth = (d1: D1Database, origin?: string) =>
  * This instance is used by the `better-auth` CLI for schema generation ONLY.
  * To access `auth` at runtime, use `event.locals.auth`.
  */
-export const auth = createAuth(null!);
+export const auth = createAuth(process.env, null!);

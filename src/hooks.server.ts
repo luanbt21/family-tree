@@ -26,7 +26,7 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 
     const db = getDb(event.platform.env.DB);
     event.locals.db = db;
-    event.locals.auth = createAuth(event.platform.env.DB, event.url.origin);
+    event.locals.auth = createAuth(event.platform?.env, event.platform.env.DB, event.url.origin);
 
     const { auth } = event.locals;
     const session = await auth.api.getSession({ headers: event.request.headers });
@@ -45,7 +45,7 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = sequence(handleParaglide, handleBetterAuth);
 
-export const handleError = ({ error, event }: any) => {
+export const handleError = ({ error, event }) => {
   console.error("SVELTEKIT SERVER ERROR:", error);
   if (error && typeof error === "object" && "stack" in error) {
     console.error(error.stack);

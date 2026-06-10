@@ -19,17 +19,13 @@ export default defineConfig({
           console.log(`[polyfill-node-module] redirected to: ${target}`);
           return target;
         }
-      }
+      },
     },
     tailwindcss(),
     sveltekit(),
     paraglideVitePlugin({ project: "./project.inlang", outdir: "./src/lib/paraglide" }),
   ],
   ssr: {
-    noExternal: [
-      "@prisma/client",
-      "@prisma/client-runtime-utils",
-      "@prisma/adapter-d1",
-    ],
+    noExternal: ["@prisma/client", "@prisma/client-runtime-utils", "@prisma/adapter-d1"],
   },
 });
