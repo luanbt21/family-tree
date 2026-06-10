@@ -25,4 +25,11 @@ export default defineConfig({
     sveltekit(),
     paraglideVitePlugin({ project: "./project.inlang", outdir: "./src/lib/paraglide" }),
   ],
+  ssr: {
+    noExternal: [
+      "@prisma/client",
+      "@prisma/client-runtime-utils",
+      "@prisma/adapter-d1",
+    ],
+  },
 });
