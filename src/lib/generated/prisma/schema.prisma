@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/lib/generated/prisma"
+  runtime  = "cloudflare"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// -----------------------------------------------------------------------------
+// USER & AUTHENTICATION (Better Auth schema)
+// -----------------------------------------------------------------------------
+
+model User {
+  id                  String       @id
+  name                String
+  email               String       @unique
+  emailVerified       Boolean      @default(false) @map("email_verified")
+  image               String?
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+  role                String?      @default("user")
+  banned              Boolean?     @default(false)
+  banReason           String?      @map("ban_reason")
+  banExpires          DateTime?    @map("ban_expires")
+  isAnonymous         Boolean?     @default(false) @map("is_anonymous")
+  username            String?      @unique
+  displayUsername     String?      @map("display_username")
+  lang                String?      @default("en")
+  sessions            Session[]
+  accounts            Account[]
+  trees               TreeMember[]
+  phoneNumber         String?      @unique @map("phone_number")
+  phoneNumberVerified Boolean?     @map("phone_number_verified")
+
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime @map("expires_at")
+  token          String   @unique
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?  @map("impersonated_by")
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// -----------------------------------------------------------------------------
+// TREE MANAGEMENT & RBAC
+// -----------------------------------------------------------------------------
+
+model Tree {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members     TreeMember[]
+  nodes       Node[]
+  fields      CustomField[]
+  customTerms CustomKinshipTerm[]
+
+  @@map("tree")
+}
+
+model TreeMember {
+  id        String   @id @default(uuid())
+  treeId    String   @map("tree_id")
+  userId    String   @map("user_id")
+  role      String // e.g., "OWNER", "EDITOR", "VIEWER"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tree Tree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId])
+  @@map("tree_member")
+}
+
+// -----------------------------------------------------------------------------
+// DYNAMIC PROFILES (NODES)
+// -----------------------------------------------------------------------------
+
+// Represents a person in the family tree
+model Node {
+  id     String @id @default(uuid())
+  treeId String @map("tree_id")
+
+  // Standard Fields
+  firstName      String    @map("first_name")
+  lastName       String?   @map("last_name")
+  gender         String // "MALE" or "FEMALE"
+  idCardNumber   String?   @map("id_card_number")
+  birthDate      DateTime  @map("birth_date")
+  deathDate      DateTime? @map("death_date")
+  lunarBirthDate String?   @map("lunar_birth_date")
+  lunarDeathDate String?   @map("lunar_death_date")
+  phone          String?
+  email          String?
+  major          String?
+  jobPosition    String?   @map("job_position")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tree Tree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  // Custom field values
+  customValues CustomFieldValue[]
+
+  // Relationships
+  relationsAsSource Edge[] @relation("SourceNode")
+  relationsAsTarget Edge[] @relation("TargetNode")
+
+  @@map("node")
+}
+
+// Defines a new custom field available for all nodes in a specific Tree
+model CustomField {
+  id     String @id @default(uuid())
+  treeId String @map("tree_id")
+  name   String // e.g., "Military Service Number"
+  type   String // e.g., "STRING", "NUMBER", "DATE", "BOOLEAN"
+
+  tree   Tree               @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  values CustomFieldValue[]
+
+  @@unique([treeId, name])
+  @@map("custom_field")
+}
+
+// Stores the actual value of a custom field for a specific Node
+model CustomFieldValue {
+  id      String @id @default(uuid())
+  nodeId  String @map("node_id")
+  fieldId String @map("field_id")
+  value   String // Stored as string, parsed based on CustomField.type
+
+  node  Node        @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  field CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([nodeId, fieldId])
+  @@map("custom_field_value")
+}
+
+// Allows a tree owner to override the default i18n term for a specific kinship path
+model CustomKinshipTerm {
+  id      String @id @default(uuid())
+  treeId  String @map("tree_id")
+  pathKey String @map("path_key")
+  term    String // e.g., "Bác trai"
+
+  tree Tree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, pathKey])
+  @@map("custom_kinship_term")
+}
+
+// Defines the directed relationship between two nodes (e.g., Parent-Child, Spouses)
+model Edge {
+  id       String @id @default(uuid())
+  sourceId String @map("source_id")
+  targetId String @map("target_id")
+  type     String // PARENT_CHILD or SPOUSE
+  order    Int? // Tracks order for multiple spouses or sibling birth order
+
+  // Optional JSON metadata to handle extra statuses (e.g., active, divorced, widowed)
+  metadata String?
+
+  source Node @relation("SourceNode", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Node @relation("TargetNode", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, targetId, type])
+  @@map("edge")
+}

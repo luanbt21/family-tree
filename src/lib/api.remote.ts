@@ -1,6 +1,6 @@
 import { query, command, getRequestEvent } from '$app/server';
 import { z } from 'zod';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '$lib/generated/prisma';
 
 // Helper to get request context synchronously
 function getContext() {
