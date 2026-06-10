@@ -12,18 +12,11 @@
   });
 </script>
 
-<div
-  class="h-[calc(100vh-66px)] flex flex-col min-h-0 relative overflow-hidden"
->
+<div class="h-[calc(100vh-66px)] flex flex-col min-h-0 relative overflow-hidden">
   <!-- Workspaces sub-navigation bar -->
-  <div
-    class="bg-background border-b px-4 py-2 flex items-center justify-between z-10 shrink-0"
-  >
+  <div class="bg-background border-b px-4 py-2 flex items-center justify-between z-10 shrink-0">
     <div class="flex items-center gap-4">
-      <a
-        href="/trees"
-        class="text-sm font-medium text-muted-foreground hover:text-foreground"
-      >
+      <a href="/trees" class="text-sm font-medium text-muted-foreground hover:text-foreground">
         Dashboard
       </a>
       <span class="text-muted-foreground text-sm">/</span>

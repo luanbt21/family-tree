@@ -56,7 +56,6 @@ export const createAuth = (d1: D1Database, origin?: string) =>
     database: prismaAdapter(getDb(d1), { provider: "sqlite" }),
   });
 
-
 /**
  * DO NOT USE!
  *

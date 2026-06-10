@@ -1,13 +1,12 @@
 packages:
-  - '.'
+  - "."
 
 allowBuilds:
-  '@tailwindcss/oxide': true
+  "@tailwindcss/oxide": true
   workerd: true
   sharp: true
   esbuild: true
-  '@prisma/client': true
+  "@prisma/client": true
   better-sqlite3: true
-  '@prisma/engines': true
+  "@prisma/engines": true
   prisma: true
-

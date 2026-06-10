@@ -100,9 +100,7 @@
           (possibleChild: any) =>
             possibleChild.id === childId &&
             n.relationsAsSource.some(
-              (rel: any) =>
-                rel.targetId === possibleChild.id &&
-                rel.type === "PARENT_CHILD",
+              (rel: any) => rel.targetId === possibleChild.id && rel.type === "PARENT_CHILD",
             ),
         ),
       );
@@ -131,9 +129,7 @@
         const spouses = data.tree.nodes
           .flatMap((n: any) => n.relationsAsSource)
           .filter(
-            (e: any) =>
-              e.type === "SPOUSE" &&
-              (e.sourceId === nodeId || e.targetId === nodeId),
+            (e: any) => e.type === "SPOUSE" && (e.sourceId === nodeId || e.targetId === nodeId),
           )
           .map((e: any) => (e.sourceId === nodeId ? e.targetId : e.sourceId));
         for (const spouseId of spouses) {
@@ -226,10 +222,7 @@
         );
 
         // n is hidden if it has parents and ALL of its parents are hidden
-        if (
-          parents.length > 0 &&
-          parents.every((p: any) => fullyHiddenNodes.has(p.id))
-        ) {
+        if (parents.length > 0 && parents.every((p: any) => fullyHiddenNodes.has(p.id))) {
           fullyHiddenNodes.add(n.id);
           changed = true;
         }
@@ -272,16 +265,10 @@
   });
 
   // Find currently selected node full details
-  const selectedNode = $derived(
-    data.tree.nodes.find((n: any) => n.id === selectedNodeId),
-  );
+  const selectedNode = $derived(data.tree.nodes.find((n: any) => n.id === selectedNodeId));
 
-  const selectedSourceRels = $derived(
-    selectedNode ? selectedNode.relationsAsSource : [],
-  );
-  const selectedTargetRels = $derived(
-    selectedNode ? selectedNode.relationsAsTarget : [],
-  );
+  const selectedSourceRels = $derived(selectedNode ? selectedNode.relationsAsSource : []);
+  const selectedTargetRels = $derived(selectedNode ? selectedNode.relationsAsTarget : []);
 
   // Find all spouses bidirectionally
   const selectedSpouses = $derived.by(() => {
@@ -290,13 +277,11 @@
       .flatMap((n: any) => n.relationsAsSource)
       .filter(
         (e: any) =>
-          e.type === "SPOUSE" &&
-          (e.sourceId === selectedNode.id || e.targetId === selectedNode.id),
+          e.type === "SPOUSE" && (e.sourceId === selectedNode.id || e.targetId === selectedNode.id),
       );
     return spouseEdges
       .map((rel: any) => {
-        const spouseId =
-          rel.sourceId === selectedNode.id ? rel.targetId : rel.sourceId;
+        const spouseId = rel.sourceId === selectedNode.id ? rel.targetId : rel.sourceId;
         const spouseNode = data.tree.nodes.find((n: any) => n.id === spouseId);
         return { relId: rel.id, spouseNode };
       })
@@ -332,19 +317,17 @@
       .flatMap((n: any) => n.relationsAsSource)
       .filter(
         (e: any) =>
-          e.type === "SPOUSE" &&
-          (e.sourceId === selectedNode.id || e.targetId === selectedNode.id),
+          e.type === "SPOUSE" && (e.sourceId === selectedNode.id || e.targetId === selectedNode.id),
       );
     for (const edge of spouseEdges) {
-      const partnerId =
-        edge.sourceId === selectedNode.id ? edge.targetId : edge.sourceId;
+      const partnerId = edge.sourceId === selectedNode.id ? edge.targetId : edge.sourceId;
       const partner = data.tree.nodes.find((n: any) => n.id === partnerId);
       if (partner) {
         events.push({
-          year:
-            (edge.metadata as any)?.year ||
-            new Date(partner.birthDate).getFullYear(),
-          text: m.timeline_event_married({ name: `${partner.lastName || ""} ${partner.firstName}` }),
+          year: (edge.metadata as any)?.year || new Date(partner.birthDate).getFullYear(),
+          text: m.timeline_event_married({
+            name: `${partner.lastName || ""} ${partner.firstName}`,
+          }),
           type: "spouse",
         });
       }
@@ -353,9 +336,7 @@
     // Children
     const childrenEdges = data.tree.nodes
       .flatMap((n: any) => n.relationsAsSource)
-      .filter(
-        (e: any) => e.type === "PARENT_CHILD" && e.sourceId === selectedNode.id,
-      );
+      .filter((e: any) => e.type === "PARENT_CHILD" && e.sourceId === selectedNode.id);
     for (const edge of childrenEdges) {
       const child = data.tree.nodes.find((n: any) => n.id === edge.targetId);
       if (child) {
@@ -582,9 +563,7 @@
       .filter((r: any) => r.targetId === sourceNode.id && r.type === "PARENT_CHILD");
 
     if (parentRels.length === 0) {
-      toast.error(
-        m.cannot_add_sibling_error()
-      );
+      toast.error(m.cannot_add_sibling_error());
       return;
     }
 
@@ -617,11 +596,7 @@
   }
 
   async function handleDeleteMember(id: string) {
-    if (
-      !confirm(
-        m.delete_member_confirm(),
-      )
-    ) {
+    if (!confirm(m.delete_member_confirm())) {
       return;
     }
 
@@ -650,19 +625,12 @@
   }
 
   async function handleDeleteRelationship(edgeId: string) {
-    if (
-      !confirm(m.delete_relationship_confirm())
-    ) {
+    if (!confirm(m.delete_relationship_confirm())) {
       return;
     }
     try {
-      const { error } = await client.api.workspace
-        .edges({ id: edgeId })
-        .delete();
-      if (error)
-        throw new Error(
-          (error.value as string) || m.delete_relationship_failed(),
-        );
+      const { error } = await client.api.workspace.edges({ id: edgeId }).delete();
+      if (error) throw new Error((error.value as string) || m.delete_relationship_failed());
       toast.success(m.delete_relationship_success());
       await invalidateAll();
     } catch (err) {
@@ -696,9 +664,7 @@
       style="transform: translate({panX}px, {panY}px) scale({scale});"
     >
       <!-- SVG Connecting Edges -->
-      <svg
-        class="absolute overflow-visible w-full h-full pointer-events-none"
-      >
+      <svg class="absolute overflow-visible w-full h-full pointer-events-none">
         <defs>
           <marker
             id="arrow"
@@ -721,7 +687,9 @@
             stroke-dasharray={edge.type === "SPOUSE" ? "5,5" : "none"}
             class="transition-all duration-300 pointer-events-auto hover:stroke-primary hover:stroke-[3px] cursor-pointer"
           >
-            <title>{edge.type === 'SPOUSE' ? m.arrow_spouse_link() : m.arrow_parent_child_link()}</title>
+            <title
+              >{edge.type === "SPOUSE" ? m.arrow_spouse_link() : m.arrow_parent_child_link()}</title
+            >
           </path>
         {/each}
       </svg>
@@ -730,15 +698,13 @@
       {#each layout.renderNodes as node}
         {@const hasChildren = data.tree.nodes.some((child: any) =>
           child.relationsAsTarget.some(
-            (rel: any) =>
-              rel.sourceId === node.id && rel.type === "PARENT_CHILD",
+            (rel: any) => rel.sourceId === node.id && rel.type === "PARENT_CHILD",
           ),
         )}
         {@const isCollapsed = collapsedNodes.has(node.id)}
         {@const hasParents = data.tree.nodes.some((parent: any) =>
           parent.relationsAsSource.some(
-            (rel: any) =>
-              rel.targetId === node.id && rel.type === "PARENT_CHILD",
+            (rel: any) => rel.targetId === node.id && rel.type === "PARENT_CHILD",
           ),
         )}
         {@const isAncestorsCollapsed = collapsedAncestors.has(node.id)}
@@ -756,9 +722,7 @@
               class="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-background border shadow-md flex items-center justify-center cursor-pointer hover:bg-muted hover:scale-110 transition-all z-20 transition-opacity duration-200 {isAncestorsCollapsed
                 ? 'opacity-100'
                 : 'opacity-0 group-hover:opacity-100'}"
-              title={isAncestorsCollapsed
-                ? m.expand_ancestors()
-                : m.collapse_ancestors()}
+              title={isAncestorsCollapsed ? m.expand_ancestors() : m.collapse_ancestors()}
             >
               {#if isAncestorsCollapsed}
                 <ChevronUp class="h-3.5 w-3.5 text-emerald-600 font-bold" />
@@ -786,17 +750,13 @@
               {selectedNodeId === node.id
               ? 'border-primary/90 bg-primary/5 shadow-md'
               : 'bg-background'}
-              {node.data.gender === 'MALE'
-              ? 'border-t-blue-500'
-              : 'border-t-rose-500'}
+              {node.data.gender === 'MALE' ? 'border-t-blue-500' : 'border-t-rose-500'}
               {node.data.deathDate ? 'opacity-85' : ''}
             "
           >
             <div>
               <div class="flex items-center justify-between gap-1">
-                <span
-                  class="text-xs text-muted-foreground truncate font-medium"
-                >
+                <span class="text-xs text-muted-foreground truncate font-medium">
                   {node.data.lastName || ""}
                   {node.data.firstName || ""}
                 </span>
@@ -808,9 +768,7 @@
                   </span>
                 {/if}
               </div>
-              <h4
-                class="font-serif font-bold text-sm line-clamp-1 group-hover:text-primary"
-              >
+              <h4 class="font-serif font-bold text-sm line-clamp-1 group-hover:text-primary">
                 {node.data.firstName}
               </h4>
 
@@ -819,15 +777,11 @@
               >
                 <span>
                   {#if node.data.deathDate}
-                    {node.data.birthDate
-                      ? new Date(node.data.birthDate).getFullYear()
-                      : "????"} - {new Date(
+                    {node.data.birthDate ? new Date(node.data.birthDate).getFullYear() : "????"} - {new Date(
                       node.data.deathDate,
                     ).getFullYear()}
                   {:else}
-                    {node.data.birthDate
-                      ? new Date(node.data.birthDate).getFullYear()
-                      : "????"}
+                    {node.data.birthDate ? new Date(node.data.birthDate).getFullYear() : "????"}
                   {/if}
                 </span>
               </div>
@@ -846,9 +800,7 @@
               title={isCollapsed ? m.expand_branch() : m.collapse_branch()}
             >
               {#if isCollapsed}
-                <ChevronDown
-                  class="h-3.5 w-3.5 text-emerald-600 font-bold"
-                />
+                <ChevronDown class="h-3.5 w-3.5 text-emerald-600 font-bold" />
               {:else}
                 <ChevronUp class="h-3.5 w-3.5 text-rose-600 font-bold" />
               {/if}
@@ -895,19 +847,14 @@
   <!-- Floating Canvas Toolbar Controls (Top Left) -->
   <div class="absolute top-6 left-6 z-10 flex items-center gap-3">
     {#if data.role !== "VIEWER"}
-      <Button
-        onclick={openAddMember}
-        class="shadow-lg flex items-center gap-2"
-      >
+      <Button onclick={openAddMember} class="shadow-lg flex items-center gap-2">
         <Plus class="h-4 w-4" />
         <span>{m.add_member()}</span>
       </Button>
     {/if}
 
     {#if focusedRootNodeId}
-      {@const rn = data.tree.nodes.find(
-        (node: any) => node.id === focusedRootNodeId,
-      )}
+      {@const rn = data.tree.nodes.find((node: any) => node.id === focusedRootNodeId)}
       {#if rn}
         <Button
           variant="outline"
@@ -922,9 +869,7 @@
     {/if}
 
     {#if cognatesRootNodeId}
-      {@const cn = data.tree.nodes.find(
-        (node: any) => node.id === cognatesRootNodeId,
-      )}
+      {@const cn = data.tree.nodes.find((node: any) => node.id === cognatesRootNodeId)}
       {#if cn}
         <Button
           variant="outline"
@@ -944,9 +889,7 @@
         class="shadow-lg flex items-center gap-2 border-dashed border-rose-300 hover:border-rose-500 bg-background"
         onclick={() => {
           selectedNodeId = null;
-          toast.info(
-            m.select_hidden_unhide_toast(),
-          );
+          toast.info(m.select_hidden_unhide_toast());
         }}
       >
         <EyeOff class="h-4 w-4 text-rose-500" />
@@ -956,9 +899,7 @@
   </div>
 
   <!-- Interactive Right Sidebar (Selected Profile, Details, Timeline & Kinship) -->
-  <div
-    class="w-96 border-l bg-background flex flex-col min-h-0 z-10 sidebar-container"
-  >
+  <div class="w-96 border-l bg-background flex flex-col min-h-0 z-10 sidebar-container">
     {#if !selectedNode}
       <!-- Empty Sidebar state -->
       <div class="flex-1 flex flex-col min-h-0">
@@ -973,18 +914,14 @@
         </div>
 
         {#if userHiddenNodes.size > 0}
-          <div
-            class="border-t p-6 max-h-[350px] flex flex-col min-h-0 bg-muted/20"
-          >
+          <div class="border-t p-6 max-h-[350px] flex flex-col min-h-0 bg-muted/20">
             <h4 class="font-semibold text-sm mb-3 flex items-center gap-2">
               <EyeOff class="h-4 w-4 text-rose-500" />
               {m.hidden_members_sidebar_title({ count: userHiddenNodes.size })}
             </h4>
             <div class="overflow-y-auto space-y-2 flex-1 pr-1">
               {#each Array.from(userHiddenNodes) as nodeId}
-                {@const n = data.tree.nodes.find(
-                  (node: any) => node.id === nodeId,
-                )}
+                {@const n = data.tree.nodes.find((node: any) => node.id === nodeId)}
                 {#if n}
                   <div
                     class="flex items-center justify-between bg-background p-2 rounded-lg border text-xs shadow-sm"
@@ -1013,9 +950,7 @@
       <!-- Node Details & Profile Tab -->
       <div class="p-6 border-b flex items-start justify-between gap-4">
         <div>
-          <span
-            class="text-xs uppercase tracking-wider font-semibold text-primary"
-          >
+          <span class="text-xs uppercase tracking-wider font-semibold text-primary">
             {m.gender_profile({ gender: selectedNode.gender })}
           </span>
           <h3 class="font-serif text-2xl font-bold mt-1">
@@ -1023,9 +958,7 @@
             {selectedNode.firstName}
           </h3>
           {#if selectedNode.jobPosition || selectedNode.major}
-            <p
-              class="text-xs text-muted-foreground flex items-center gap-1 mt-1"
-            >
+            <p class="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <Briefcase class="h-3 w-3" />
               <span>
                 {selectedNode.jobPosition || m.job_default()}{selectedNode.major
@@ -1036,9 +969,7 @@
           {/if}
           <div class="mt-3 flex flex-wrap gap-2">
             <Button
-              variant={cognatesRootNodeId === selectedNode.id
-                ? "secondary"
-                : "outline"}
+              variant={cognatesRootNodeId === selectedNode.id ? "secondary" : "outline"}
               size="xs"
               class="h-7 text-xs flex items-center gap-1 px-3 rounded-full"
               onclick={() => {
@@ -1058,9 +989,7 @@
             </Button>
 
             <Button
-              variant={focusedRootNodeId === selectedNode.id
-                ? "secondary"
-                : "outline"}
+              variant={focusedRootNodeId === selectedNode.id ? "secondary" : "outline"}
               size="xs"
               class="h-7 text-xs flex items-center gap-1 px-3 rounded-full"
               onclick={() => {
@@ -1073,9 +1002,7 @@
             >
               <Maximize2 class="h-3.5 w-3.5" />
               <span>
-                {focusedRootNodeId === selectedNode.id
-                  ? m.full_tree_btn()
-                  : m.make_root_btn()}
+                {focusedRootNodeId === selectedNode.id ? m.full_tree_btn() : m.make_root_btn()}
               </span>
             </Button>
 
@@ -1129,9 +1056,7 @@
             {/if}
           </div>
 
-          <div
-            class="grid grid-cols-2 gap-4 bg-muted/40 p-4 rounded-xl text-xs space-y-0.5"
-          >
+          <div class="grid grid-cols-2 gap-4 bg-muted/40 p-4 rounded-xl text-xs space-y-0.5">
             <div>
               <span class="text-muted-foreground block">{m.birth_date()}</span>
               <span class="font-medium"
@@ -1142,40 +1067,26 @@
             </div>
             {#if selectedNode.lunarBirthDate}
               <div>
-                <span class="text-muted-foreground block"
-                  >{m.lunar_birth_date()}</span
-                >
-                <span class="font-medium"
-                  >{selectedNode.lunarBirthDate}</span
-                >
+                <span class="text-muted-foreground block">{m.lunar_birth_date()}</span>
+                <span class="font-medium">{selectedNode.lunarBirthDate}</span>
               </div>
             {/if}
             {#if selectedNode.deathDate}
               <div>
-                <span class="text-muted-foreground block"
-                  >{m.deceased_date()}</span
-                >
+                <span class="text-muted-foreground block">{m.deceased_date()}</span>
                 <span class="font-medium text-rose-600"
-                  >{new Date(
-                    selectedNode.deathDate,
-                  ).toLocaleDateString()}</span
+                  >{new Date(selectedNode.deathDate).toLocaleDateString()}</span
                 >
               </div>
             {/if}
             {#if selectedNode.lunarDeathDate}
               <div>
-                <span class="text-muted-foreground block"
-                  >{m.lunar_death_date()}</span
-                >
-                <span class="font-medium text-rose-600"
-                  >{selectedNode.lunarDeathDate}</span
-                >
+                <span class="text-muted-foreground block">{m.lunar_death_date()}</span>
+                <span class="font-medium text-rose-600">{selectedNode.lunarDeathDate}</span>
               </div>
             {/if}
             {#if selectedNode.phone}
-              <div
-                class="col-span-2 flex items-center gap-1.5 mt-2 pt-2 border-t border-muted"
-              >
+              <div class="col-span-2 flex items-center gap-1.5 mt-2 pt-2 border-t border-muted">
                 <Phone class="h-3 w-3 text-muted-foreground" />
                 <span>{selectedNode.phone}</span>
               </div>
@@ -1192,9 +1103,7 @@
         <!-- Quick Add Relative -->
         {#if data.role !== "VIEWER"}
           <div class="space-y-3 pt-4 border-t">
-            <h4
-              class="font-serif font-bold text-xs uppercase tracking-wider text-muted-foreground"
-            >
+            <h4 class="font-serif font-bold text-xs uppercase tracking-wider text-muted-foreground">
               {m.quick_add_relative()}
             </h4>
             <div class="grid grid-cols-2 gap-2">
@@ -1250,23 +1159,17 @@
         <!-- Custom Field Values -->
         {#if selectedNode.customValues && selectedNode.customValues.length > 0}
           <div class="space-y-3">
-            <h4
-              class="font-serif font-bold text-sm uppercase tracking-wider text-muted-foreground"
-            >
+            <h4 class="font-serif font-bold text-sm uppercase tracking-wider text-muted-foreground">
               {m.custom_field_attributes()}
             </h4>
             <div class="space-y-2">
               {#each selectedNode.customValues as cv}
-                {@const definition = data.tree.fields.find(
-                  (f: any) => f.id === cv.fieldId,
-                )}
+                {@const definition = data.tree.fields.find((f: any) => f.id === cv.fieldId)}
                 {#if definition}
                   <div
                     class="flex justify-between items-center text-xs py-1.5 border-b border-muted"
                   >
-                    <span class="text-muted-foreground"
-                      >{definition.name}</span
-                    >
+                    <span class="text-muted-foreground">{definition.name}</span>
                     <span class="font-medium">{cv.value}</span>
                   </div>
                 {/if}
@@ -1301,11 +1204,11 @@
             <div class="space-y-2 text-xs">
               <!-- Spouses -->
               {#each selectedSpouses as { relId, spouseNode }}
-                <div
-                  class="flex items-center justify-between p-2 rounded bg-muted/30"
-                >
+                <div class="flex items-center justify-between p-2 rounded bg-muted/30">
                   <span
-                    >{@html m.relation_label_spouse({ name: `<strong>${spouseNode.lastName || ""} ${spouseNode.firstName}</strong>` })}</span
+                    >{@html m.relation_label_spouse({
+                      name: `<strong>${spouseNode.lastName || ""} ${spouseNode.firstName}</strong>`,
+                    })}</span
                   >
                   {#if data.role !== "VIEWER"}
                     <button
@@ -1320,15 +1223,13 @@
 
               <!-- Parents (relations where selected node is Target and type is PARENT_CHILD) -->
               {#each selectedTargetRels.filter((r: any) => r.type === "PARENT_CHILD") as rel}
-                {@const parent = data.tree.nodes.find(
-                  (n: any) => n.id === rel.sourceId,
-                )}
+                {@const parent = data.tree.nodes.find((n: any) => n.id === rel.sourceId)}
                 {#if parent}
-                  <div
-                    class="flex items-center justify-between p-2 rounded bg-muted/30"
-                  >
+                  <div class="flex items-center justify-between p-2 rounded bg-muted/30">
                     <span
-                      >{@html m.relation_label_parent({ name: `<strong>${parent.lastName || ""} ${parent.firstName}</strong>` })}</span
+                      >{@html m.relation_label_parent({
+                        name: `<strong>${parent.lastName || ""} ${parent.firstName}</strong>`,
+                      })}</span
                     >
                     {#if data.role !== "VIEWER"}
                       <button
@@ -1344,15 +1245,13 @@
 
               <!-- Children (relations where selected node is Source and type is PARENT_CHILD) -->
               {#each selectedSourceRels.filter((r: any) => r.type === "PARENT_CHILD") as rel}
-                {@const child = data.tree.nodes.find(
-                  (n: any) => n.id === rel.targetId,
-                )}
+                {@const child = data.tree.nodes.find((n: any) => n.id === rel.targetId)}
                 {#if child}
-                  <div
-                    class="flex items-center justify-between p-2 rounded bg-muted/30"
-                  >
+                  <div class="flex items-center justify-between p-2 rounded bg-muted/30">
                     <span
-                      >{@html m.relation_label_child({ name: `<strong>${child.lastName || ""} ${child.firstName}</strong>` })}</span
+                      >{@html m.relation_label_child({
+                        name: `<strong>${child.lastName || ""} ${child.firstName}</strong>`,
+                      })}</span
                     >
                     {#if data.role !== "VIEWER"}
                       <button
@@ -1371,17 +1270,13 @@
 
         <!-- Kinship Calculator widget -->
         <div class="space-y-4 pt-6 border-t">
-          <h4
-            class="font-serif font-bold text-lg flex items-center gap-1.5"
-          >
+          <h4 class="font-serif font-bold text-lg flex items-center gap-1.5">
             <HelpCircle class="h-4 w-4 text-primary" />
             <span>{m.kinship_calculator()}</span>
           </h4>
 
           <div class="space-y-3">
-            <Label for="kinship-target" class="text-xs"
-              >{m.compare_relationship_to()}</Label
-            >
+            <Label for="kinship-target" class="text-xs">{m.compare_relationship_to()}</Label>
             <Combobox
               id="kinship-target"
               bind:value={kinshipTargetId}
@@ -1399,9 +1294,7 @@
               <div
                 class="bg-primary/5 border border-primary/20 p-4 rounded-xl mt-2 animate-in fade-in slide-in-from-top-1 duration-200"
               >
-                <p
-                  class="text-xs text-muted-foreground uppercase tracking-wider font-semibold"
-                >
+                <p class="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                   {m.calculated_relation()}
                 </p>
                 <h5 class="text-base font-bold text-primary mt-1">
@@ -1423,17 +1316,13 @@
               {m.no_timeline_events()}
             </p>
           {:else}
-            <div
-              class="relative border-l border-muted pl-4 ml-2 space-y-4 text-xs"
-            >
+            <div class="relative border-l border-muted pl-4 ml-2 space-y-4 text-xs">
               {#each selectedTimeline as event}
                 <div class="relative">
                   <div
                     class="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border border-primary bg-background"
                   ></div>
-                  <span class="font-bold text-primary block"
-                    >{event.year}</span
-                  >
+                  <span class="font-bold text-primary block">{event.year}</span>
                   <span class="text-muted-foreground">{event.text}</span>
                 </div>
               {/each}

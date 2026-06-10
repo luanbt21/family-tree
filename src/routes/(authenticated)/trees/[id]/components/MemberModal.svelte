@@ -58,12 +58,8 @@
             firstName: node.firstName,
             lastName: node.lastName || "",
             gender: node.gender,
-            birthDate: node.birthDate
-              ? new Date(node.birthDate).toISOString().split("T")[0]
-              : "",
-            deathDate: node.deathDate
-              ? new Date(node.deathDate).toISOString().split("T")[0]
-              : "",
+            birthDate: node.birthDate ? new Date(node.birthDate).toISOString().split("T")[0] : "",
+            deathDate: node.deathDate ? new Date(node.deathDate).toISOString().split("T")[0] : "",
             lunarBirthDate: node.lunarBirthDate || "",
             lunarDeathDate: node.lunarDeathDate || "",
             phone: node.phone || "",
@@ -135,9 +131,7 @@
         lastName: nodeForm.lastName || undefined,
         gender: nodeForm.gender,
         birthDate: new Date(nodeForm.birthDate).toISOString(),
-        deathDate: nodeForm.deathDate
-          ? new Date(nodeForm.deathDate).toISOString()
-          : undefined,
+        deathDate: nodeForm.deathDate ? new Date(nodeForm.deathDate).toISOString() : undefined,
         lunarBirthDate: nodeForm.lunarBirthDate || undefined,
         lunarDeathDate: nodeForm.lunarDeathDate || undefined,
         phone: nodeForm.phone || undefined,
@@ -153,9 +147,7 @@
       }
 
       const response = isEditingMember
-        ? await client.api.workspace
-            .nodes({ id: editingNodeId! })
-            .patch(payload)
+        ? await client.api.workspace.nodes({ id: editingNodeId! }).patch(payload)
         : await client.api.workspace.nodes.post(payload);
 
       if (typeof response.data === "string") {
@@ -181,22 +173,18 @@
             targetId: newNode.id,
             type: "SPOUSE",
           });
-          if (relError)
-            console.error("Failed to establish spouse connection:", relError);
+          if (relError) console.error("Failed to establish spouse connection:", relError);
         } else if (type === "CHILD") {
           const { error: relError } = await client.api.workspace.edges.post({
             sourceId,
             targetId: newNode.id,
             type: "PARENT_CHILD",
           });
-          if (relError)
-            console.error("Failed to establish child connection:", relError);
+          if (relError) console.error("Failed to establish child connection:", relError);
         } else if (type === "SIBLING") {
           const parentRels = data.tree.nodes
             .flatMap((n: any) => n.relationsAsSource)
-            .filter(
-              (r: any) => r.targetId === sourceId && r.type === "PARENT_CHILD",
-            );
+            .filter((r: any) => r.targetId === sourceId && r.type === "PARENT_CHILD");
 
           for (const rel of parentRels) {
             const { error: relError } = await client.api.workspace.edges.post({
@@ -205,10 +193,7 @@
               type: "PARENT_CHILD",
             });
             if (relError)
-              console.error(
-                `Failed to link parent ${rel.sourceId} to sibling:`,
-                relError,
-              );
+              console.error(`Failed to link parent ${rel.sourceId} to sibling:`, relError);
           }
         } else if (type === "PARENT") {
           const { error: relError } = await client.api.workspace.edges.post({
@@ -216,19 +201,14 @@
             targetId: sourceId,
             type: "PARENT_CHILD",
           });
-          if (relError)
-            console.error("Failed to establish parent connection:", relError);
+          if (relError) console.error("Failed to establish parent connection:", relError);
         }
       }
 
       // Reset pending relation state
       pendingRelation = null;
 
-      toast.success(
-        isEditingMember
-          ? m.member_update_success()
-          : m.member_add_success(),
-      );
+      toast.success(isEditingMember ? m.member_update_success() : m.member_add_success());
       show = false;
       await invalidateAll();
     } catch (err) {
@@ -370,9 +350,7 @@
         <!-- Custom Fields inputs -->
         {#if data.tree.fields.length > 0}
           <div class="border-t pt-4 space-y-4">
-            <h4
-              class="font-serif font-bold text-sm uppercase tracking-wider text-muted-foreground"
-            >
+            <h4 class="font-serif font-bold text-sm uppercase tracking-wider text-muted-foreground">
               {m.bespoke_fields_title()}
             </h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -416,11 +394,7 @@
         {/if}
 
         <div class="flex justify-end gap-3 border-t pt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onclick={() => (show = false)}
-          >
+          <Button type="button" variant="ghost" onclick={() => (show = false)}>
             {m.cancel()}
           </Button>
           <Button type="submit">{m.save_details()}</Button>

@@ -2,12 +2,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Calendar } from "$lib/components/ui/calendar";
   import * as Popover from "$lib/components/ui/popover";
-  import {
-    CalendarDate,
-    getLocalTimeZone,
-    parseDate,
-    today,
-  } from "@internationalized/date";
+  import { CalendarDate, getLocalTimeZone, parseDate, today } from "@internationalized/date";
   import { Calendar as CalendarIcon } from "@lucide/svelte";
   import { Input } from "../input";
 
@@ -40,14 +35,7 @@
       const month = parseInt(parts[1], 10);
       const year = parseInt(parts[2], 10);
       if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        if (
-          year >= 1000 &&
-          year <= 9999 &&
-          month >= 1 &&
-          month <= 12 &&
-          day >= 1 &&
-          day <= 31
-        ) {
+        if (year >= 1000 && year <= 9999 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
           try {
             return new CalendarDate(year, month, day);
           } catch (e) {
@@ -62,11 +50,7 @@
   // Derive internal CalendarDate from external value
   const internalValue = $derived.by(() => {
     if (value instanceof Date) {
-      return new CalendarDate(
-        value.getFullYear(),
-        value.getMonth() + 1,
-        value.getDate(),
-      );
+      return new CalendarDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
     } else if (value && typeof value === "object" && "calendar" in value) {
       return value as CalendarDate;
     } else if (typeof value === "string" && value) {

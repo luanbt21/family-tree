@@ -38,8 +38,7 @@
   });
 
   const selectedLabel = $derived(
-    options.find((opt) => String(opt.value) === String(value))?.label ||
-      placeholder,
+    options.find((opt) => String(opt.value) === String(value))?.label || placeholder,
   );
 
   function handleSelect(val: string) {

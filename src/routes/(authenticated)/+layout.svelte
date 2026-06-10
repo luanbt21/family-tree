@@ -24,10 +24,15 @@
 
 <div class="min-h-screen bg-muted/20 text-foreground flex flex-col">
   <!-- Navbar -->
-  <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+  <header
+    class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <!-- Brand Logo -->
-      <a href="/trees" class="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-primary">
+      <a
+        href="/trees"
+        class="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-primary"
+      >
         <FolderTree class="h-6 w-6 stroke-[2]" />
         <span>GiaPhảViệt</span>
       </a>
@@ -35,9 +40,15 @@
       <!-- Navbar Right -->
       <div class="flex items-center gap-4">
         <!-- User Badge -->
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-muted/50 max-w-[200px] sm:max-w-xs">
+        <div
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-muted/50 max-w-[200px] sm:max-w-xs"
+        >
           {#if data.user.image}
-            <img src={data.user.image} alt={data.user.name} class="h-6 w-6 rounded-full object-cover" />
+            <img
+              src={data.user.image}
+              alt={data.user.name}
+              class="h-6 w-6 rounded-full object-cover"
+            />
           {:else}
             <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
               <User class="h-3 w-3 text-primary" />
@@ -67,4 +78,3 @@
     {@render children()}
   </main>
 </div>
-

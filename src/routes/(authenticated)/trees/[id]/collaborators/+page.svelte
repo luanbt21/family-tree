@@ -24,17 +24,13 @@
 
     isInviting = true;
     try {
-      const { error } = await client.api
-        .trees({ id: data.tree.id })
-        .members.post({
-          emailOrUsername: inviteEmailOrUsername,
-          role: inviteRole,
-        });
+      const { error } = await client.api.trees({ id: data.tree.id }).members.post({
+        emailOrUsername: inviteEmailOrUsername,
+        role: inviteRole,
+      });
 
       if (error) {
-        throw new Error(
-          (error.value as string) || m.invite_failed()
-        );
+        throw new Error((error.value as string) || m.invite_failed());
       }
 
       toast.success(m.invite_success());
@@ -52,15 +48,9 @@
     if (!confirm(m.remove_collaborator_confirm())) return;
 
     try {
-      const { error } = await client.api
-        .trees({ id: data.tree.id })
-        .members({ memberId })
-        .delete();
+      const { error } = await client.api.trees({ id: data.tree.id }).members({ memberId }).delete();
 
-      if (error)
-        throw new Error(
-          (error.value as string) || m.remove_failed()
-        );
+      if (error) throw new Error((error.value as string) || m.remove_failed());
       toast.success(m.remove_success());
       await invalidateAll();
     } catch (err) {
@@ -70,9 +60,7 @@
   }
 </script>
 
-<div
-  class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8 overflow-y-auto"
->
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8 overflow-y-auto">
   <div class="space-y-6">
     <div>
       <h3 class="font-serif text-2xl font-bold">{m.tree_collaboration_title()}</h3>
@@ -86,10 +74,7 @@
         <h4 class="font-serif font-bold mb-3 text-base">
           {m.invite_collaborator_title()}
         </h4>
-        <form
-          onsubmit={handleInviteCollaborator}
-          class="flex flex-col sm:flex-row gap-4 items-end"
-        >
+        <form onsubmit={handleInviteCollaborator} class="flex flex-col sm:flex-row gap-4 items-end">
           <div class="flex-1 space-y-2">
             <Label for="collab-name">{m.user_email_or_username_label()}</Label>
             <Input
@@ -136,30 +121,20 @@
           {m.no_collaborators_found()}
         </p>
       {:else}
-        <div
-          class="border rounded-xl divide-y bg-background overflow-hidden"
-        >
+        <div class="border rounded-xl divide-y bg-background overflow-hidden">
           {#each treeMembers as tm}
             <div class="flex items-center justify-between p-4 text-sm">
               <div class="flex items-center gap-3">
                 <div
                   class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary"
                 >
-                  {tm.user.name
-                    ? tm.user.name[0]
-                    : tm.user.email
-                      ? tm.user.email[0]
-                      : "U"}
+                  {tm.user.name ? tm.user.name[0] : tm.user.email ? tm.user.email[0] : "U"}
                 </div>
                 <div>
                   <span class="font-semibold block"
-                    >{tm.user.name ||
-                      tm.user.username ||
-                      "System User"}</span
+                    >{tm.user.name || tm.user.username || "System User"}</span
                   >
-                  <span class="text-xs text-muted-foreground block"
-                    >{tm.user.email}</span
-                  >
+                  <span class="text-xs text-muted-foreground block">{tm.user.email}</span>
                 </div>
               </div>
 
@@ -193,4 +168,3 @@
     </div>
   </div>
 </div>
-

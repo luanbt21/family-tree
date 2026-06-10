@@ -34,10 +34,7 @@
         type: newFieldType,
       });
 
-      if (error)
-        throw new Error(
-          (error.value as string) || m.custom_field_create_failed()
-        );
+      if (error) throw new Error((error.value as string) || m.custom_field_create_failed());
       toast.success(m.custom_field_create_success());
       newFieldName = "";
       await invalidateAll();
@@ -50,21 +47,14 @@
   }
 
   async function handleDeleteField(fieldId: string) {
-    if (
-      !confirm(
-        m.delete_custom_field_confirm()
-      )
-    ) {
+    if (!confirm(m.delete_custom_field_confirm())) {
       return;
     }
     try {
       const { error } = await client.api.workspace["custom-fields"]({
         id: fieldId,
       }).delete();
-      if (error)
-        throw new Error(
-          (error.value as string) || m.custom_field_delete_failed()
-        );
+      if (error) throw new Error((error.value as string) || m.custom_field_delete_failed());
       toast.success(m.custom_field_delete_success());
       await invalidateAll();
     } catch (err) {
@@ -85,10 +75,7 @@
         term: customKinshipTerm,
       });
 
-      if (error)
-        throw new Error(
-          (error.value as string) || m.kinship_override_save_failed()
-        );
+      if (error) throw new Error((error.value as string) || m.kinship_override_save_failed());
       toast.success(m.kinship_override_save_success());
       customKinshipPathKey = "";
       customKinshipTerm = "";
@@ -107,8 +94,7 @@
       const { error } = await client.api.workspace["kinship-terms"]({
         id: termId,
       }).delete();
-      if (error)
-        throw new Error((error.value as string) || m.kinship_override_remove_failed());
+      if (error) throw new Error((error.value as string) || m.kinship_override_remove_failed());
       toast.success(m.kinship_override_remove_success());
       await invalidateAll();
     } catch (err) {
@@ -118,9 +104,7 @@
   }
 </script>
 
-<div
-  class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8 overflow-y-auto"
->
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8 overflow-y-auto">
   <!-- CUSTOM FIELDS SECTION -->
   <div class="space-y-6">
     <div>
@@ -133,10 +117,7 @@
     {#if data.role === "OWNER"}
       <Card class="p-6">
         <h4 class="font-bold mb-3 text-base font-serif">{m.create_custom_field_title()}</h4>
-        <form
-          onsubmit={handleCreateField}
-          class="flex flex-col sm:flex-row gap-4 items-end"
-        >
+        <form onsubmit={handleCreateField} class="flex flex-col sm:flex-row gap-4 items-end">
           <div class="flex-1 space-y-2">
             <Label for="field-name">{m.field_label_label()}</Label>
             <Input
@@ -177,11 +158,11 @@
 
     <!-- Custom Fields List -->
     <div class="space-y-3">
-      <h4 class="font-semibold text-sm text-muted-foreground">{m.active_fields_definition_title()}</h4>
+      <h4 class="font-semibold text-sm text-muted-foreground">
+        {m.active_fields_definition_title()}
+      </h4>
       {#if data.tree.fields.length === 0}
-        <div
-          class="border rounded-xl p-8 text-center text-muted-foreground bg-background/50"
-        >
+        <div class="border rounded-xl p-8 text-center text-muted-foreground bg-background/50">
           {m.no_custom_fields_defined()}
         </div>
       {:else}
@@ -223,10 +204,7 @@
     {#if data.role === "OWNER"}
       <Card class="p-6">
         <h4 class="font-bold mb-3 text-base font-serif">{m.create_kinship_override_title()}</h4>
-        <form
-          onsubmit={handleSaveKinshipTerm}
-          class="flex flex-col sm:flex-row gap-4 items-end"
-        >
+        <form onsubmit={handleSaveKinshipTerm} class="flex flex-col sm:flex-row gap-4 items-end">
           <div class="flex-1 space-y-2">
             <Label for="path-key">{m.path_key_label()}</Label>
             <Combobox
@@ -278,9 +256,7 @@
     <div class="space-y-3">
       <h4 class="font-semibold text-sm text-muted-foreground">{m.active_term_overrides_title()}</h4>
       {#if !data.tree.customTerms || data.tree.customTerms.length === 0}
-        <div
-          class="border rounded-xl p-8 text-center text-muted-foreground bg-background/50"
-        >
+        <div class="border rounded-xl p-8 text-center text-muted-foreground bg-background/50">
           {m.no_custom_kinship_overrides()}
         </div>
       {:else}

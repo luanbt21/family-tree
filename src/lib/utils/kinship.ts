@@ -11,11 +11,11 @@ export function calculateKinship(
   targetId: string,
   nodes: TreeLayoutNode[],
   edges: TreeLayoutEdge[],
-  customTerms: { pathKey: string; term: string }[] = []
+  customTerms: { pathKey: string; term: string }[] = [],
 ): KinshipResult {
   const result = getStandardKinship(sourceId, targetId, nodes, edges);
   const pathKey = result.path.join(".");
-  const override = customTerms.find(ct => ct.pathKey === pathKey);
+  const override = customTerms.find((ct) => ct.pathKey === pathKey);
   if (override) {
     return {
       ...result,
@@ -29,7 +29,7 @@ function getStandardKinship(
   sourceId: string,
   targetId: string,
   nodes: TreeLayoutNode[],
-  edges: TreeLayoutEdge[]
+  edges: TreeLayoutEdge[],
 ): KinshipResult {
   if (sourceId === targetId) {
     return { path: [], termVi: "Bản thân", termEn: "Self" };
@@ -64,7 +64,8 @@ function getStandardKinship(
   }
 
   // BFS to find the shortest path
-  const queue: { current: string; path: { to: string; type: "PARENT" | "CHILD" | "SPOUSE" }[] }[] = [];
+  const queue: { current: string; path: { to: string; type: "PARENT" | "CHILD" | "SPOUSE" }[] }[] =
+    [];
   const visited = new Set<string>();
 
   queue.push({ current: sourceId, path: [] });
@@ -96,7 +97,7 @@ function getStandardKinship(
     return { path: [], termVi: "Họ hàng xa / Chưa xác định", termEn: "Distant relative / Unknown" };
   }
 
-  const pathStr = foundPath.map(p => p.type);
+  const pathStr = foundPath.map((p) => p.type);
   const targetNode = nodeMap.get(targetId)!;
   const targetGender = targetNode.gender;
 
@@ -196,7 +197,7 @@ function getStandardKinship(
     const parentNode = nodeMap.get(foundPath[0].to)!;
     const grandparentNode = nodeMap.get(foundPath[1].to)!;
     const isPaternal = parentNode.gender === "MALE";
-    
+
     // Check if older or younger than parent
     const parentBirth = new Date(parentNode.birthDate).getTime();
     const targetBirth = new Date(targetNode.birthDate).getTime();
@@ -258,18 +259,26 @@ function getStandardKinship(
   }
 
   // 10. Nephew / Niece (Parent -> Child -> Child)
-  if (pathStr.length === 3 && pathStr[0] === "PARENT" && pathStr[1] === "CHILD" && pathStr[2] === "CHILD") {
+  if (
+    pathStr.length === 3 &&
+    pathStr[0] === "PARENT" &&
+    pathStr[1] === "CHILD" &&
+    pathStr[2] === "CHILD"
+  ) {
     return {
       path: pathStr,
-      termVi: targetGender === "MALE" ? "Cháu (Gọi bằng Bác/Cô/Chú/Cậu)" : "Cháu gái (Gọi bằng Bác/Cô/Chú/Cậu)",
+      termVi:
+        targetGender === "MALE"
+          ? "Cháu (Gọi bằng Bác/Cô/Chú/Cậu)"
+          : "Cháu gái (Gọi bằng Bác/Cô/Chú/Cậu)",
       termEn: targetGender === "MALE" ? "Nephew" : "Niece",
     };
   }
 
   // Default fallback for longer paths
   // Count parents and children in path
-  const parentsCount = pathStr.filter(p => p === "PARENT").length;
-  const childrenCount = pathStr.filter(p => p === "CHILD").length;
+  const parentsCount = pathStr.filter((p) => p === "PARENT").length;
+  const childrenCount = pathStr.filter((p) => p === "CHILD").length;
 
   if (parentsCount === 3 && childrenCount === 0) {
     return {

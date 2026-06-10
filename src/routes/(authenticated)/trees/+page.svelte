@@ -22,16 +22,16 @@
       toast.error(m.tree_name_required());
       return;
     }
-    
+
     isSubmitting = true;
     try {
       const { data: resData, error } = await client.api.trees.post({
         name: newTreeName,
-        description: newTreeDesc || undefined
+        description: newTreeDesc || undefined,
       });
 
       if (error) {
-        throw new Error(error.value as string || m.tree_create_failed());
+        throw new Error((error.value as string) || m.tree_create_failed());
       }
 
       toast.success(m.tree_create_success());
@@ -56,7 +56,7 @@
       const { error } = await client.api.trees({ id }).delete();
 
       if (error) {
-        throw new Error(error.value as string || m.tree_delete_failed());
+        throw new Error((error.value as string) || m.tree_delete_failed());
       }
 
       toast.success(m.tree_delete_success());
@@ -72,14 +72,16 @@
   <!-- Page Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent font-serif">
+      <h1
+        class="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent font-serif"
+      >
         {m.your_family_trees()}
       </h1>
       <p class="text-muted-foreground mt-1">
         {m.trees_description()}
       </p>
     </div>
-    <Button onclick={() => showCreateModal = true} class="flex items-center gap-2 shadow-lg">
+    <Button onclick={() => (showCreateModal = true)} class="flex items-center gap-2 shadow-lg">
       <Plus class="h-4 w-4" />
       <span>{m.new_family_tree()}</span>
     </Button>
@@ -87,7 +89,9 @@
 
   {#if data.trees.length === 0}
     <!-- Empty State -->
-    <div class="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 text-center bg-background/50 backdrop-blur-sm max-w-2xl mx-auto w-full my-auto">
+    <div
+      class="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 text-center bg-background/50 backdrop-blur-sm max-w-2xl mx-auto w-full my-auto"
+    >
       <div class="p-4 rounded-full bg-primary/10 mb-4">
         <Users class="h-10 w-10 text-primary" />
       </div>
@@ -95,7 +99,7 @@
       <p class="text-muted-foreground text-sm max-w-sm mt-2 mb-6">
         {m.no_trees_desc()}
       </p>
-      <Button onclick={() => showCreateModal = true} class="flex items-center gap-2">
+      <Button onclick={() => (showCreateModal = true)} class="flex items-center gap-2">
         <Plus class="h-4 w-4" />
         <span>{m.create_first_tree()}</span>
       </Button>
@@ -104,19 +108,31 @@
     <!-- Trees Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each data.trees as tree}
-        <Card class="group relative flex flex-col overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300 bg-background/50 backdrop-blur-md">
+        <Card
+          class="group relative flex flex-col overflow-hidden hover:shadow-xl hover:border-primary/40 transition-all duration-300 bg-background/50 backdrop-blur-md"
+        >
           <div class="p-6 flex-1 flex flex-col">
             <!-- Header (Name & Role) -->
             <div class="flex items-start justify-between gap-2 mb-3">
-              <h3 class="font-serif text-xl font-bold group-hover:text-primary transition-colors line-clamp-1">
+              <h3
+                class="font-serif text-xl font-bold group-hover:text-primary transition-colors line-clamp-1"
+              >
                 {tree.name}
               </h3>
-              
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider
-                {tree.role === 'OWNER' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : ''}
-                {tree.role === 'EDITOR' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : ''}
-                {tree.role === 'VIEWER' ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-300' : ''}
-              ">
+
+              <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider
+                {tree.role === 'OWNER'
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                  : ''}
+                {tree.role === 'EDITOR'
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  : ''}
+                {tree.role === 'VIEWER'
+                  ? 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-300'
+                  : ''}
+              "
+              >
                 {tree.role}
               </span>
             </div>
@@ -127,7 +143,9 @@
             </p>
 
             <!-- Metadata (Created At) -->
-            <div class="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-muted/50">
+            <div
+              class="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-muted/50"
+            >
               <span class="flex items-center gap-1">
                 <Calendar class="h-3.5 w-3.5" />
                 <span>{new Date(tree.createdAt).toLocaleDateString()}</span>
@@ -138,7 +156,7 @@
           <!-- Hover Overlay Actions -->
           <div class="p-4 bg-muted/30 border-t flex items-center justify-between gap-2">
             <Button href={`/trees/${tree.id}`} variant="default" size="sm" class="flex-1 gap-2">
-              {#if tree.role === 'VIEWER'}
+              {#if tree.role === "VIEWER"}
                 <Eye class="h-4 w-4" />
                 <span>{m.view_tree()}</span>
               {:else}
@@ -146,11 +164,11 @@
                 <span>{m.edit_tree()}</span>
               {/if}
             </Button>
-            
-            {#if tree.role === 'OWNER'}
-              <Button 
-                variant="outline" 
-                size="icon" 
+
+            {#if tree.role === "OWNER"}
+              <Button
+                variant="outline"
+                size="icon"
                 class="text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 border-muted"
                 onclick={() => handleDeleteTree(tree.id, tree.name)}
                 title={m.delete_tree_title()}
@@ -168,16 +186,18 @@
 <!-- Simple Create Modal (Fallback layout when Dialog triggers aren't global) -->
 {#if showCreateModal}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="w-full max-w-md bg-background border rounded-xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200">
+    <div
+      class="w-full max-w-md bg-background border rounded-xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200"
+    >
       <h3 class="font-serif text-2xl font-bold mb-2">{m.create_new_tree_modal_title()}</h3>
       <p class="text-muted-foreground text-sm mb-4">{m.create_tree_modal_desc()}</p>
 
       <form onsubmit={handleCreateTree} class="space-y-4">
         <div class="space-y-2">
           <Label for="tree-name">{m.family_lineage_name_label()}</Label>
-          <Input 
-            id="tree-name" 
-            placeholder="e.g., Nguyễn Gia Tộc, Trần Family Tree" 
+          <Input
+            id="tree-name"
+            placeholder="e.g., Nguyễn Gia Tộc, Trần Family Tree"
             bind:value={newTreeName}
             required
             disabled={isSubmitting}
@@ -196,19 +216,15 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onclick={() => showCreateModal = false}
+          <Button
+            type="button"
+            variant="ghost"
+            onclick={() => (showCreateModal = false)}
             disabled={isSubmitting}
           >
             {m.cancel()}
           </Button>
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            class="min-w-[80px]"
-          >
+          <Button type="submit" disabled={isSubmitting} class="min-w-[80px]">
             {#if isSubmitting}
               {m.creating()}
             {:else}

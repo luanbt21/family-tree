@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    "node_modules/",
+    ".svelte-kit/",
+    ".wrangler/",
+    "src/lib/generated/"
+  ]
+}

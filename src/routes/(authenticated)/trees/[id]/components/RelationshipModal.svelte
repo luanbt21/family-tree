@@ -22,9 +22,7 @@
     data: any;
   } = $props();
 
-  const sourceNode = $derived(
-    data.tree.nodes.find((n: any) => n.id === relSourceId)
-  );
+  const sourceNode = $derived(data.tree.nodes.find((n: any) => n.id === relSourceId));
 
   async function handleAddRelationship(e: SubmitEvent) {
     e.preventDefault();
@@ -41,9 +39,7 @@
       });
 
       if (error) {
-        throw new Error(
-          (error.value as string) || m.relationship_failed()
-        );
+        throw new Error((error.value as string) || m.relationship_failed());
       }
 
       toast.success(m.relationship_success());
@@ -57,9 +53,7 @@
 </script>
 
 {#if show}
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-  >
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
     <div
       class="w-full max-w-md bg-background border rounded-xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200"
     >
@@ -72,7 +66,9 @@
 
       <h3 class="font-serif text-2xl font-bold mb-2">{m.establish_relation_title()}</h3>
       <p class="text-muted-foreground text-sm mb-4">
-        {@html m.establish_relation_desc({ name: `<strong>${sourceNode?.lastName || ""} ${sourceNode?.firstName}</strong>` })}
+        {@html m.establish_relation_desc({
+          name: `<strong>${sourceNode?.lastName || ""} ${sourceNode?.firstName}</strong>`,
+        })}
       </p>
 
       <form onsubmit={handleAddRelationship} class="space-y-4">
@@ -110,11 +106,7 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onclick={() => (show = false)}
-          >
+          <Button type="button" variant="ghost" onclick={() => (show = false)}>
             {m.cancel()}
           </Button>
           <Button type="submit">{m.establish_connection_btn()}</Button>
@@ -123,4 +115,3 @@
     </div>
   </div>
 {/if}
-
