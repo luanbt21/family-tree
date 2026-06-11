@@ -5,24 +5,24 @@ export const load: LayoutServerLoad = async ({ params, locals, parent }) => {
   const { user } = await parent();
   const { id } = params;
 
-  const membership = await locals.db.treeMember.findFirst({
-    where: { treeId: id, userId: user.id },
+  const membership = await locals.db.query.TreeMember.findFirst({
+    where: (tm, { and, eq }) => and(eq(tm.treeId, id), eq(tm.userId, user.id)),
   });
 
   if (!membership) {
     throw error(403, "You do not have access to this family tree.");
   }
 
-  const tree = await locals.db.tree.findUnique({
-    where: { id },
-    include: {
+  const tree = await locals.db.query.Tree.findFirst({
+    where: (t, { eq }) => eq(t.id, id),
+    with: {
       members: {
-        include: {
+        with: {
           user: true,
         },
       },
       nodes: {
-        include: {
+        with: {
           customValues: true,
           relationsAsSource: true,
           relationsAsTarget: true,

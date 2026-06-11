@@ -1,11 +1,11 @@
-generator client {
-  provider = "prisma-client-js"
-  output   = "../src/lib/generated/prisma"
-  runtime  = "cloudflare"
+generator drizzle {
+  provider = "drizzle-prisma-generator"
+  output   = "../src/lib/server/db/schema.ts"
 }
 
 datasource db {
   provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // -----------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth/minimal";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import * as dbSchema from "$lib/server/db/schema";
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { env as privateEnv } from "$env/dynamic/private";
 import { getRequestEvent } from "$app/server";
@@ -66,7 +67,15 @@ export const createAuth = (
         clientSecret: getEnv(env, "GITHUB_CLIENT_SECRET"),
       },
     },
-    database: prismaAdapter(getDb(d1), { provider: "sqlite" }),
+    database: drizzleAdapter(getDb(d1), {
+      provider: "sqlite",
+      schema: {
+        user: dbSchema.User,
+        session: dbSchema.Session,
+        account: dbSchema.Account,
+        verification: dbSchema.Verification,
+      },
+    }),
   });
 };
 

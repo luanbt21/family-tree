@@ -2,10 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "family-tree",
   "compatibility_date": "2026-05-25",
-  "compatibility_flags": [
-    "nodejs_als",
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_als", "nodejs_compat"],
   "main": ".svelte-kit/cloudflare/_worker.js",
   "assets": {
     "binding": "ASSETS",
@@ -20,4 +17,13 @@
   ],
   "workers_dev": true,
   "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "family-tree.luanbt.com",
+      "zone_name": "luanbt.com",
+      "custom_domain": true,
+      "enabled": true,
+      "previews_enabled": false,
+    },
+  ],
 }

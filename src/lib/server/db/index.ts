@@ -1,12 +1,10 @@
-import { PrismaD1 } from "@prisma/adapter-d1";
-import { PrismaClient } from "$lib/generated/prisma";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "./schema";
 
-export const getDb = (d1: D1Database): PrismaClient => {
-  const adapter = new PrismaD1(d1);
-  return new PrismaClient({ adapter });
+export const getDb = (d1: D1Database) => {
+  return drizzle(d1, { schema });
 };
-export type DbClient = PrismaClient;
-export type DbTransaction = Omit<
-  PrismaClient,
-  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
->;
+
+export type DbClient = ReturnType<typeof getDb>;
+export type DbTransaction = DbClient;
+

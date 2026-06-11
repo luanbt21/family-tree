@@ -1,13 +1,23 @@
-import { query, command, getRequestEvent } from "$app/server";
+import { command, getRequestEvent, query } from "$app/server";
+import type { DbClient } from "$lib/server/db";
+import {
+  CustomField,
+  CustomFieldValue,
+  CustomKinshipTerm,
+  Edge,
+  Node,
+  Tree,
+  TreeMember,
+} from "$lib/server/db/schema";
+import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import type { PrismaClient } from "$lib/generated/prisma";
 
 // Helper to get request context synchronously
 function getContext() {
   const event = getRequestEvent();
   if (!event) throw new Error("Request event not found");
   return {
-    db: event.locals.db as PrismaClient,
+    db: event.locals.db as DbClient,
     user: event.locals.user,
     session: event.locals.session,
   };
@@ -15,13 +25,13 @@ function getContext() {
 
 // Helper to check user membership and role in a tree
 async function checkTreeAccess(
-  db: PrismaClient,
+  db: DbClient,
   userId: string,
   treeId: string,
   allowedRoles: string[] = ["OWNER", "EDITOR", "VIEWER"],
 ) {
-  const membership = await db.treeMember.findFirst({
-    where: { treeId, userId },
+  const membership = await db.query.TreeMember.findFirst({
+    where: (tm, { and, eq }) => and(eq(tm.treeId, treeId), eq(tm.userId, userId)),
   });
   return membership && allowedRoles.includes(membership.role) ? membership : null;
 }
@@ -33,9 +43,9 @@ async function checkTreeAccess(
 export const getTrees = query(async () => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
-  const treeMemberships = await db.treeMember.findMany({
-    where: { userId: user.id },
-    include: { tree: true },
+  const treeMemberships = await db.query.TreeMember.findMany({
+    where: (tm, { eq }) => eq(tm.userId, user.id),
+    with: { tree: true },
   });
   return treeMemberships.map((mt: any) => ({
     ...mt.tree,
@@ -49,17 +59,28 @@ export const createTree = command(v.any(), async (payload: any) => {
   const { name, description } = payload;
   if (!name) throw new Error("Tree name is required");
 
-  const newTree = await db.tree.create({
-    data: {
-      name,
-      description,
-      members: {
-        create: {
-          userId: user.id,
-          role: "OWNER",
-        },
-      },
-    },
+  const newTree = await db.transaction(async (tx) => {
+    const treeId = crypto.randomUUID();
+    const [treeRow] = await tx
+      .insert(Tree)
+      .values({
+        id: treeId,
+        name,
+        description,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    await tx.insert(TreeMember).values({
+      id: crypto.randomUUID(),
+      treeId,
+      userId: user.id,
+      role: "OWNER",
+      createdAt: new Date(),
+    });
+
+    return treeRow;
   });
 
   return { ...newTree, role: "OWNER" };
@@ -71,11 +92,11 @@ export const getTree = query(v.string(), async (id: string) => {
   const access = await checkTreeAccess(db, user.id, id);
   if (!access) throw new Error("You do not have access to this family tree.");
 
-  const treeData = await db.tree.findUnique({
-    where: { id },
-    include: {
+  const treeData = await db.query.Tree.findFirst({
+    where: (t, { eq }) => eq(t.id, id),
+    with: {
       nodes: {
-        include: {
+        with: {
           customValues: true,
           relationsAsSource: true,
           relationsAsTarget: true,
@@ -97,7 +118,7 @@ export const deleteTree = command(v.string(), async (id: string) => {
   const access = await checkTreeAccess(db, user.id, id, ["OWNER"]);
   if (!access) throw new Error("Only the tree owner can delete this family tree.");
 
-  await db.tree.delete({ where: { id } });
+  await db.delete(Tree).where(eq(Tree.id, id));
   return { success: true, message: "Family tree deleted successfully." };
 });
 
@@ -107,11 +128,11 @@ export const getTreeMembers = query(v.string(), async (id: string) => {
   const access = await checkTreeAccess(db, user.id, id);
   if (!access) throw new Error("Access denied.");
 
-  const members = await db.treeMember.findMany({
-    where: { treeId: id },
-    include: {
+  const members = await db.query.TreeMember.findMany({
+    where: (tm, { eq }) => eq(tm.treeId, id),
+    with: {
       user: {
-        select: {
+        columns: {
           id: true,
           name: true,
           email: true,
@@ -134,29 +155,32 @@ export const addTreeMember = command(v.any(), async (payload: any) => {
   if (!emailOrUsername) throw new Error("Username or email is required");
 
   // Find user in system
-  const targetUser = await db.user.findFirst({
-    where: {
-      OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
-    },
+  const targetUser = await db.query.User.findFirst({
+    where: (u, { or, eq }) => or(eq(u.email, emailOrUsername), eq(u.username, emailOrUsername)),
   });
 
   if (!targetUser) throw new Error("User not found in system.");
 
   // Check if already member
-  const existingMember = await db.treeMember.findFirst({
-    where: { treeId: id, userId: targetUser.id },
+  const existingMember = await db.query.TreeMember.findFirst({
+    where: (tm, { and, eq }) => and(eq(tm.treeId, id), eq(tm.userId, targetUser.id)),
   });
   if (existingMember) throw new Error("User is already a member of this tree.");
 
-  const newMember = await db.treeMember.create({
-    data: {
-      treeId: id,
-      userId: targetUser.id,
-      role,
-    },
-    include: {
+  const memberId = crypto.randomUUID();
+  await db.insert(TreeMember).values({
+    id: memberId,
+    treeId: id,
+    userId: targetUser.id,
+    role,
+    createdAt: new Date(),
+  });
+
+  const newMember = await db.query.TreeMember.findFirst({
+    where: (tm, { eq }) => eq(tm.id, memberId),
+    with: {
       user: {
-        select: {
+        columns: {
           id: true,
           name: true,
           email: true,
@@ -177,16 +201,17 @@ export const updateTreeMember = command(v.any(), async (payload: any) => {
   const requesterMembership = await checkTreeAccess(db, user.id, id, ["OWNER"]);
   if (!requesterMembership) throw new Error("Only the owner can update roles.");
 
-  const targetMember = await db.treeMember.findUnique({
-    where: { id: memberId },
+  const targetMember = await db.query.TreeMember.findFirst({
+    where: (tm, { eq }) => eq(tm.id, memberId),
   });
   if (!targetMember) throw new Error("Collaborator not found.");
   if (targetMember.userId === user.id) throw new Error("You cannot change your own role.");
 
-  const updated = await db.treeMember.update({
-    where: { id: memberId },
-    data: { role },
-  });
+  const [updated] = await db
+    .update(TreeMember)
+    .set({ role })
+    .where(eq(TreeMember.id, memberId))
+    .returning();
   return updated;
 });
 
@@ -197,13 +222,13 @@ export const deleteTreeMember = command(v.any(), async (payload: any) => {
   const requesterMembership = await checkTreeAccess(db, user.id, id, ["OWNER"]);
   if (!requesterMembership) throw new Error("Only the owner can remove collaborators.");
 
-  const targetMember = await db.treeMember.findUnique({
-    where: { id: memberId },
+  const targetMember = await db.query.TreeMember.findFirst({
+    where: (tm, { eq }) => eq(tm.id, memberId),
   });
   if (!targetMember) throw new Error("Collaborator not found.");
   if (targetMember.userId === user.id) throw new Error("You cannot remove yourself.");
 
-  await db.treeMember.delete({ where: { id: memberId } });
+  await db.delete(TreeMember).where(eq(TreeMember.id, memberId));
   return { success: true, message: "Collaborator removed successfully." };
 });
 
@@ -233,8 +258,10 @@ export const createNode = command(v.any(), async (payload: any) => {
   const access = await checkTreeAccess(db, user.id, treeId, ["OWNER", "EDITOR"]);
   if (!access) throw new Error("You do not have permission to modify this family tree.");
 
-  const node = await db.node.create({
-    data: {
+  const nodeId = crypto.randomUUID();
+  await db.transaction(async (tx) => {
+    await tx.insert(Node).values({
+      id: nodeId,
       treeId,
       firstName,
       lastName,
@@ -247,26 +274,27 @@ export const createNode = command(v.any(), async (payload: any) => {
       email,
       major,
       jobPosition,
-    },
-  });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-  if (customFields && Array.isArray(customFields)) {
-    for (const cf of customFields) {
-      if (cf.fieldId && cf.value !== undefined) {
-        await db.customFieldValue.create({
-          data: {
-            nodeId: node.id,
+    if (customFields && Array.isArray(customFields)) {
+      for (const cf of customFields) {
+        if (cf.fieldId && cf.value !== undefined) {
+          await tx.insert(CustomFieldValue).values({
+            id: crypto.randomUUID(),
+            nodeId,
             fieldId: cf.fieldId,
             value: String(cf.value),
-          },
-        });
+          });
+        }
       }
     }
-  }
+  });
 
-  const fullNode = await db.node.findUnique({
-    where: { id: node.id },
-    include: { customValues: true },
+  const fullNode = await db.query.Node.findFirst({
+    where: (n, { eq }) => eq(n.id, nodeId),
+    with: { customValues: true },
   });
 
   return fullNode;
@@ -277,7 +305,9 @@ export const updateNode = command(v.any(), async (payload: any) => {
   if (!user) throw new Error("Unauthorized");
   const { id, payload: dataPayload } = payload;
 
-  const targetNode = await db.node.findUnique({ where: { id } });
+  const targetNode = await db.query.Node.findFirst({
+    where: (n, { eq }) => eq(n.id, id),
+  });
   if (!targetNode) throw new Error("Family member not found.");
 
   const access = await checkTreeAccess(db, user.id, targetNode.treeId, ["OWNER", "EDITOR"]);
@@ -298,47 +328,53 @@ export const updateNode = command(v.any(), async (payload: any) => {
     customFields,
   } = dataPayload;
 
-  await db.node.update({
-    where: { id },
-    data: {
-      firstName: firstName !== undefined ? firstName : undefined,
-      lastName: lastName !== undefined ? lastName : undefined,
-      gender: gender !== undefined ? gender : undefined,
-      birthDate: birthDate !== undefined ? new Date(birthDate) : undefined,
-      deathDate: deathDate !== undefined ? (deathDate ? new Date(deathDate) : null) : undefined,
-      lunarBirthDate: lunarBirthDate !== undefined ? lunarBirthDate : undefined,
-      lunarDeathDate: lunarDeathDate !== undefined ? lunarDeathDate : undefined,
-      phone: phone !== undefined ? phone : undefined,
-      email: email !== undefined ? email : undefined,
-      major: major !== undefined ? major : undefined,
-      jobPosition: jobPosition !== undefined ? jobPosition : undefined,
-    },
-  });
+  await db.transaction(async (tx) => {
+    await tx
+      .update(Node)
+      .set({
+        firstName: firstName !== undefined ? firstName : undefined,
+        lastName: lastName !== undefined ? lastName : undefined,
+        gender: gender !== undefined ? gender : undefined,
+        birthDate: birthDate !== undefined ? new Date(birthDate) : undefined,
+        deathDate:
+          deathDate !== undefined
+            ? deathDate
+              ? new Date(deathDate)
+              : null
+            : undefined,
+        lunarBirthDate: lunarBirthDate !== undefined ? lunarBirthDate : undefined,
+        lunarDeathDate: lunarDeathDate !== undefined ? lunarDeathDate : undefined,
+        phone: phone !== undefined ? phone : undefined,
+        email: email !== undefined ? email : undefined,
+        major: major !== undefined ? major : undefined,
+        jobPosition: jobPosition !== undefined ? jobPosition : undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(Node.id, id));
 
-  if (customFields && Array.isArray(customFields)) {
-    for (const cf of customFields) {
-      if (cf.fieldId && cf.value !== undefined) {
-        await db.customFieldValue.upsert({
-          where: {
-            nodeId_fieldId: {
+    if (customFields && Array.isArray(customFields)) {
+      for (const cf of customFields) {
+        if (cf.fieldId && cf.value !== undefined) {
+          await tx
+            .insert(CustomFieldValue)
+            .values({
+              id: crypto.randomUUID(),
               nodeId: id,
               fieldId: cf.fieldId,
-            },
-          },
-          update: { value: String(cf.value) },
-          create: {
-            nodeId: id,
-            fieldId: cf.fieldId,
-            value: String(cf.value),
-          },
-        });
+              value: String(cf.value),
+            })
+            .onConflictDoUpdate({
+              target: [CustomFieldValue.nodeId, CustomFieldValue.fieldId],
+              set: { value: String(cf.value) },
+            });
+        }
       }
     }
-  }
+  });
 
-  const fullNode = await db.node.findUnique({
-    where: { id },
-    include: { customValues: true },
+  const fullNode = await db.query.Node.findFirst({
+    where: (n, { eq }) => eq(n.id, id),
+    with: { customValues: true },
   });
 
   return fullNode;
@@ -348,13 +384,15 @@ export const deleteNode = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
-  const targetNode = await db.node.findUnique({ where: { id } });
+  const targetNode = await db.query.Node.findFirst({
+    where: (n, { eq }) => eq(n.id, id),
+  });
   if (!targetNode) throw new Error("Family member not found.");
 
   const access = await checkTreeAccess(db, user.id, targetNode.treeId, ["OWNER", "EDITOR"]);
   if (!access) throw new Error("You do not have permission to modify this family tree.");
 
-  await db.node.delete({ where: { id } });
+  await db.delete(Node).where(eq(Node.id, id));
   return { success: true, message: "Member deleted successfully." };
 });
 
@@ -363,8 +401,8 @@ export const createEdge = command(v.any(), async (payload: any) => {
   if (!user) throw new Error("Unauthorized");
   const { sourceId, targetId, type, order } = payload;
 
-  const sourceNode = await db.node.findUnique({ where: { id: sourceId } });
-  const targetNode = await db.node.findUnique({ where: { id: targetId } });
+  const sourceNode = await db.query.Node.findFirst({ where: (n, { eq }) => eq(n.id, sourceId) });
+  const targetNode = await db.query.Node.findFirst({ where: (n, { eq }) => eq(n.id, targetId) });
   if (!sourceNode || !targetNode) throw new Error("Source or target node not found.");
   if (sourceNode.treeId !== targetNode.treeId)
     throw new Error("Nodes must belong to the same family tree.");
@@ -372,40 +410,43 @@ export const createEdge = command(v.any(), async (payload: any) => {
   const access = await checkTreeAccess(db, user.id, sourceNode.treeId, ["OWNER", "EDITOR"]);
   if (!access) throw new Error("You do not have permission to modify this family tree.");
 
-  const existing = await db.edge.findFirst({
-    where: {
-      OR: [
-        { sourceId, targetId, type },
-        { sourceId: targetId, targetId: sourceId, type },
-      ],
-    },
+  const existing = await db.query.Edge.findFirst({
+    where: (e, { or, and, eq }) =>
+      or(
+        and(eq(e.sourceId, sourceId), eq(e.targetId, targetId), eq(e.type, type)),
+        and(eq(e.sourceId, targetId), eq(e.targetId, sourceId), eq(e.type, type)),
+      ),
   });
   if (existing) throw new Error("This relationship already exists.");
 
-  return await db.edge.create({
-    data: {
+  const [edge] = await db
+    .insert(Edge)
+    .values({
+      id: crypto.randomUUID(),
       sourceId,
       targetId,
       type,
       order,
-    },
-  });
+    })
+    .returning();
+
+  return edge;
 });
 
 export const deleteEdge = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
-  const targetEdge = await db.edge.findUnique({
-    where: { id },
-    include: { source: true },
+  const targetEdge = await db.query.Edge.findFirst({
+    where: (e, { eq }) => eq(e.id, id),
+    with: { source: true },
   });
   if (!targetEdge) throw new Error("Relationship not found.");
 
   const access = await checkTreeAccess(db, user.id, targetEdge.source.treeId, ["OWNER", "EDITOR"]);
   if (!access) throw new Error("You do not have permission to modify this family tree.");
 
-  await db.edge.delete({ where: { id } });
+  await db.delete(Edge).where(eq(Edge.id, id));
   return { success: true, message: "Relationship removed successfully." };
 });
 
@@ -417,26 +458,30 @@ export const createCustomField = command(v.any(), async (payload: any) => {
   const access = await checkTreeAccess(db, user.id, treeId, ["OWNER"]);
   if (!access) throw new Error("Only the tree owner can define custom fields.");
 
-  return await db.customField.create({
-    data: {
+  const [field] = await db
+    .insert(CustomField)
+    .values({
+      id: crypto.randomUUID(),
       treeId,
       name,
       type,
-    },
-  });
+    })
+    .returning();
+
+  return field;
 });
 
 export const deleteCustomField = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
-  const field = await db.customField.findUnique({ where: { id } });
+  const field = await db.query.CustomField.findFirst({ where: (cf, { eq }) => eq(cf.id, id) });
   if (!field) throw new Error("Custom field not found.");
 
   const access = await checkTreeAccess(db, user.id, field.treeId, ["OWNER"]);
   if (!access) throw new Error("Only the tree owner can delete custom fields.");
 
-  await db.customField.delete({ where: { id } });
+  await db.delete(CustomField).where(eq(CustomField.id, id));
   return { success: true, message: "Custom field deleted successfully." };
 });
 
@@ -446,8 +491,8 @@ export const getKinshipTerms = query(v.string(), async (id: string) => {
   const access = await checkTreeAccess(db, user.id, id, ["OWNER", "EDITOR", "VIEWER"]);
   if (!access) throw new Error("Access denied.");
 
-  const terms = await db.customKinshipTerm.findMany({
-    where: { treeId: id },
+  const terms = await db.query.CustomKinshipTerm.findMany({
+    where: (ckt, { eq }) => eq(ckt.treeId, id),
   });
   return terms;
 });
@@ -460,19 +505,28 @@ export const saveKinshipTerm = command(v.any(), async (payload: any) => {
   const access = await checkTreeAccess(db, user.id, treeId, ["OWNER"]);
   if (!access) throw new Error("Only the tree owner can define custom kinship terms.");
 
-  const existing = await db.customKinshipTerm.findFirst({
-    where: { treeId, pathKey },
+  const existing = await db.query.CustomKinshipTerm.findFirst({
+    where: (ckt, { and, eq }) => and(eq(ckt.treeId, treeId), eq(ckt.pathKey, pathKey)),
   });
 
   if (existing) {
-    return await db.customKinshipTerm.update({
-      where: { id: existing.id },
-      data: { term },
-    });
+    const [updated] = await db
+      .update(CustomKinshipTerm)
+      .set({ term })
+      .where(eq(CustomKinshipTerm.id, existing.id))
+      .returning();
+    return updated;
   } else {
-    return await db.customKinshipTerm.create({
-      data: { treeId, pathKey, term },
-    });
+    const [created] = await db
+      .insert(CustomKinshipTerm)
+      .values({
+        id: crypto.randomUUID(),
+        treeId,
+        pathKey,
+        term,
+      })
+      .returning();
+    return created;
   }
 });
 
@@ -480,12 +534,14 @@ export const deleteKinshipTerm = command(v.string(), async (id: string) => {
   const { db, user } = getContext();
   if (!user) throw new Error("Unauthorized");
 
-  const term = await db.customKinshipTerm.findUnique({ where: { id } });
+  const term = await db.query.CustomKinshipTerm.findFirst({
+    where: (ckt, { eq }) => eq(ckt.id, id),
+  });
   if (!term) throw new Error("Kinship term override not found.");
 
   const access = await checkTreeAccess(db, user.id, term.treeId, ["OWNER"]);
   if (!access) throw new Error("Only the tree owner can remove kinship term overrides.");
 
-  await db.customKinshipTerm.delete({ where: { id } });
+  await db.delete(CustomKinshipTerm).where(eq(CustomKinshipTerm.id, id));
   return { success: true, message: "Custom kinship term removed successfully." };
 });
