@@ -21,6 +21,7 @@
   "send_reset_link": "Gửi liên kết",
   "remember_password": "Nhớ mật khẩu?",
   "fields_required_error": "Tất cả các trường đều bắt buộc",
+  "captcha_required_error": "Vui lòng hoàn thành mã CAPTCHA",
   "sign_in_success": "Đăng nhập thành công!",
   "sign_in_failed": "Đăng nhập thất bại",
   "sign_up_success": "Tạo tài khoản thành công!",

@@ -13,9 +13,13 @@
   import { goto } from "$app/navigation";
   import { m } from "$lib/paraglide/messages.js";
   import LanguageSwitcher from "$lib/components/language-switcher.svelte";
+  import { PUBLIC_TURNSTILE_SITE_KEY } from "$env/static/public";
+  import { Turnstile } from "$lib/components/ui/turnstile";
 
   const callbackURL = page.url.searchParams.get("redirect") || "/trees";
   let pending = $state(false);
+  let turnstileToken = $state("");
+  let resetTurnstile: (() => void) | undefined = $state();
 
   const handleSubmit: EventHandler<SubmitEvent, HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -32,16 +36,28 @@
         return;
       }
 
+      if (!turnstileToken) {
+        toast.error(m.captcha_required_error());
+        return;
+      }
+
       const { error } = await authClient.signUp.email({
         email,
         password,
         name,
         username,
         callbackURL,
+        fetchOptions: {
+          headers: {
+            "x-captcha-response": turnstileToken,
+          },
+        },
       });
 
       if (error) {
         toast.error(error.message || m.sign_up_failed());
+        turnstileToken = "";
+        resetTurnstile?.();
         return;
       }
 
@@ -50,6 +66,8 @@
     } catch (err) {
       toast.error(m.sign_up_failed());
       console.error(err);
+      turnstileToken = "";
+      resetTurnstile?.();
     } finally {
       pending = false;
     }
@@ -143,6 +161,8 @@
             disabled={pending}
           />
         </div>
+
+        <Turnstile siteKey={PUBLIC_TURNSTILE_SITE_KEY} onSuccess={(token) => turnstileToken = token} bind:reset={resetTurnstile} />
 
         <Button class="w-full" type="submit" disabled={pending}>
           {#if pending}

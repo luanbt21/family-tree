@@ -21,6 +21,7 @@
   "send_reset_link": "Send Reset Link",
   "remember_password": "Remember your password?",
   "fields_required_error": "All fields are required",
+  "captcha_required_error": "Please complete the CAPTCHA",
   "sign_in_success": "Signed in successfully!",
   "sign_in_failed": "Failed to sign in",
   "sign_up_success": "Account created successfully!",

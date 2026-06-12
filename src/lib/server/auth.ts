@@ -5,7 +5,7 @@ import { sveltekitCookies } from "better-auth/svelte-kit";
 import { env as privateEnv } from "$env/dynamic/private";
 import { getRequestEvent } from "$app/server";
 import { getDb } from "$lib/server/db";
-import { admin, anonymous, emailOTP, phoneNumber, username } from "better-auth/plugins";
+import { admin, anonymous, emailOTP, phoneNumber, username, captcha } from "better-auth/plugins";
 
 const authConfig = {
   user: {
@@ -20,25 +20,9 @@ const authConfig = {
     },
   },
   emailAndPassword: { enabled: true },
-  plugins: [
-    admin(),
-    anonymous(),
-    username(),
-    phoneNumber({
-      sendOTP: ({ phoneNumber, code }, ctx) => {
-        // TODO: Implement sending OTP code via SMS
-      },
-    }),
-    emailOTP({
-      sendVerificationOTP: async ({ email, otp, type }, ctx) => {
-        // TODO: send email OTP to user
-      },
-    }),
-    sveltekitCookies(getRequestEvent), // make sure this is the last plugin in the array
-  ],
 } satisfies Omit<
   Parameters<typeof betterAuth>[0],
-  "database" | "secret" | "baseURL" | "socialProviders"
+  "database" | "secret" | "baseURL" | "socialProviders" | "plugins"
 >;
 
 export function getEnv(
@@ -53,8 +37,32 @@ export const createAuth = (
   d1: D1Database,
   origin?: string,
 ) => {
+  const captchaSecret = getEnv(env, "TURNSTILE_SECRET_KEY") || "1x0000000000000000000000000000000AA";
+
+  const plugins = [
+    admin(),
+    anonymous(),
+    username(),
+    phoneNumber({
+      sendOTP: ({ phoneNumber, code }, ctx) => {
+        // TODO: Implement sending OTP code via SMS
+      },
+    }),
+    emailOTP({
+      sendVerificationOTP: async ({ email, otp, type }, ctx) => {
+        // TODO: send email OTP to user
+      },
+    }),
+    captcha({
+      provider: "cloudflare-turnstile",
+      secretKey: captchaSecret,
+    }),
+    sveltekitCookies(getRequestEvent), // make sure this is the last plugin in the array
+  ];
+
   return betterAuth({
     ...authConfig,
+    plugins,
     baseURL: origin || getEnv(env, "ORIGIN"),
     secret: getEnv(env, "BETTER_AUTH_SECRET"),
     socialProviders: {
